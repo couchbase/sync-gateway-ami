@@ -1,5 +1,5 @@
 
-from troposphere import Base64, Join
+from troposphere import Base64, Join, Ref
 
 
 # The "user data" launch script that runs on startup on SG and SG Accel EC2 instances.
@@ -8,12 +8,12 @@ from troposphere import Base64, Join
 def userDataSGAccel(build_repo_commit, sgautoscale_repo_commit):
     return Base64(Join('', [
         '#!/bin/bash\n',
-        'cd $HOME\n',
+        'cd /home/ec2-user/sync-gateway-ami\n',
         'pwd\n',
-
-        'export PYTHONPATH=.',
-        'python sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), '\n',
+        'source setup.sh\n',
+        'python src/sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), '\n',
         'ethtool -K eth0 sg off\n'  # Disable scatter / gather for eth0 (see http://bit.ly/1R25bbE)
+        # TODO: for sg-autoscale cloudformation, call install_telegraf()
     ]))
 
 # The "user data" launch script that runs on startup on SG and SG Accel EC2 instances.
@@ -26,6 +26,7 @@ def userDataSyncGateway(build_repo_commit, sgautoscale_repo_commit):
         'export PYTHONPATH=.',
         'python sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), '--server-type', '\n',
         'ethtool -K eth0 sg off\n'  # Disable scatter / gather for eth0 (see http://bit.ly/1R25bbE)
+        # TODO: for sg-autoscale cloudformation, call install_telegraf()
     ]))
 
 # The "user data" launch script that runs on startup on Couchbase Server instances
@@ -51,5 +52,6 @@ def userDataCouchbaseServer(build_repo_commit, sgautoscale_repo_commit, admin_us
         'export public_dns_name=$(curl http://169.254.169.254/latest/meta-data/public-hostname)\n',  # call ec2 instance data to get public hostname
         'python cbbootstrap.py --cluster-id ', Ref("AWS::StackId"), ' --node-ip-addr-or-hostname ${public_dns_name} --admin-user ',  admin_user_reference, ' --admin-pass ',  admin_passwword_reference, '\n',
         'ethtool -K eth0 sg off\n'  # Disable scatter / gather for eth0 (see http://bit.ly/1R25bbE)
+        # TODO: for sg-autoscale cloudformation, call install_telegraf()
     ]))
 
