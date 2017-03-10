@@ -10,7 +10,7 @@ def userDataSGAccel(build_repo_commit, sgautoscale_repo_commit):
         '#!/bin/bash\n',
         'cd $HOME\n',
         'pwd\n',
-        
+
         'export PYTHONPATH=.',
         'python sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), '\n',
         'ethtool -K eth0 sg off\n'  # Disable scatter / gather for eth0 (see http://bit.ly/1R25bbE)
