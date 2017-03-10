@@ -105,7 +105,6 @@ if __name__ == "__main__":
     if sg_launch.is_sync_gateway_or_accel(server_type):  # TODO
         relaunch_sg_with_custom_config(args.stack_name)
 
-    install_telegraf(server_type)  # TODO: split this out into a separate.
 
 
    
