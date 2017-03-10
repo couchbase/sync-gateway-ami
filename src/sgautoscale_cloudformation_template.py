@@ -256,7 +256,7 @@ def gen_template(config):
         IamInstanceProfile=Ref(instanceProfile),
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=userDataSyncGatewayOrAccel(config.build_repo_commit, config.sgautoscale_repo_commit),
+        UserData=userDataSyncGateway(config.build_repo_commit, config.sgautoscale_repo_commit),
         BlockDeviceMappings=[blockDeviceMapping(config, "syncgateway")]
     )
     t.add_resource(SGLaunchConfiguration)
@@ -284,7 +284,7 @@ def gen_template(config):
         IamInstanceProfile=Ref(instanceProfile),
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=userDataSyncGatewayOrAccel(config.build_repo_commit, config.sgautoscale_repo_commit),
+        UserData=userDataSGAccel(config.build_repo_commit, config.sgautoscale_repo_commit),
         BlockDeviceMappings=[blockDeviceMapping(config, "sgaccel")]
     )
     t.add_resource(SGAccelLaunchConfiguration)
@@ -313,7 +313,7 @@ def gen_template(config):
         instance.SecurityGroups = [Ref(secGrpCouchbase)]
         instance.KeyName = Ref(keyname_param)
         instance.IamInstanceProfile = Ref(instanceProfile)
-        instance.UserData = userDataSyncGatewayOrAccel(config.build_repo_commit, config.sgautoscale_repo_commit)
+        instance.UserData = userDataSGAccel(config.build_repo_commit, config.sgautoscale_repo_commit)
         instance.Tags = Tags(Name=name, Type=server_type)
         instance.BlockDeviceMappings = [blockDeviceMapping(config, server_type)]
 

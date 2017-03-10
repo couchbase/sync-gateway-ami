@@ -182,7 +182,7 @@ def gen_template(config):
     instance.SecurityGroups = [Ref(secGrpCouchbase)]
     instance.KeyName = Ref(keyname_param)
     instance.Tags = Tags(Name=name, Type="syncgateway")
-    instance.UserData = sgautoscale.userDataSyncGatewayOrAccel(
+    instance.UserData = sgautoscale.userDataSyncGateway(
         config.build_repo_commit,
         config.sgautoscale_repo_commit,
     )
@@ -198,7 +198,7 @@ def gen_template(config):
     instance.SecurityGroups = [Ref(secGrpCouchbase)]
     instance.KeyName = Ref(keyname_param)
     instance.Tags = Tags(Name=name, Type="sgaccel")
-    instance.UserData = sgautoscale.userDataSyncGatewayOrAccel(
+    instance.UserData = sgautoscale.userDataSGAccel(
         config.build_repo_commit,
         config.sgautoscale_repo_commit,
     )
