@@ -184,8 +184,6 @@ def gen_template(config):
         instance.Tags = Tags(Name=name, Type=server_type)
         instance.IamInstanceProfile = Ref(instanceProfile)
         instance.UserData = userDataCouchbaseServer(
-            config.build_repo_commit,
-            config.sgautoscale_repo_commit,
             Ref(couchbase_server_admin_user_param),
             Ref(couchbase_server_admin_pass_param),
         )
@@ -256,7 +254,7 @@ def gen_template(config):
         IamInstanceProfile=Ref(instanceProfile),
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=userDataSyncGateway(config.build_repo_commit, config.sgautoscale_repo_commit),
+        UserData=userDataSyncGateway(),
         BlockDeviceMappings=[blockDeviceMapping(config, "syncgateway")]
     )
     t.add_resource(SGLaunchConfiguration)
@@ -272,6 +270,7 @@ def gen_template(config):
         ],
         MaxSize=100,
         MinSize=0,
+        DesiredCapacity=1,
     )
     t.add_resource(SGAutoScalingGroup)
 
@@ -284,7 +283,7 @@ def gen_template(config):
         IamInstanceProfile=Ref(instanceProfile),
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=userDataSGAccel(config.build_repo_commit, config.sgautoscale_repo_commit),
+        UserData=userDataSGAccel(),
         BlockDeviceMappings=[blockDeviceMapping(config, "sgaccel")]
     )
     t.add_resource(SGAccelLaunchConfiguration)
@@ -299,6 +298,7 @@ def gen_template(config):
         ],
         MaxSize=100,
         MinSize=0,
+        DesiredCapacity=1,
     )
     t.add_resource(SGAccelAutoScalingGroup)
 
@@ -313,7 +313,7 @@ def gen_template(config):
         instance.SecurityGroups = [Ref(secGrpCouchbase)]
         instance.KeyName = Ref(keyname_param)
         instance.IamInstanceProfile = Ref(instanceProfile)
-        instance.UserData = userDataSGAccel(config.build_repo_commit, config.sgautoscale_repo_commit)
+        instance.UserData = userDataSGAccel()
         instance.Tags = Tags(Name=name, Type=server_type)
         instance.BlockDeviceMappings = [blockDeviceMapping(config, server_type)]
 
@@ -368,8 +368,6 @@ def main():
             'block_device_name',
             'block_device_volume_size_by_server_type',
             'block_device_volume_type',
-            'build_repo_commit',
-            'sgautoscale_repo_commit',
         ]),
     )
 
@@ -415,8 +413,6 @@ def main():
         block_device_name="/dev/sda1",  # "/dev/sda1" for centos, /dev/xvda for amazon linux ami
         block_device_volume_size_by_server_type={"couchbaseserver": 200, "syncgateway": 25, "sgaccel": 25, "loadgenerator": 25},
         block_device_volume_type="gp2",
-        build_repo_commit="master",
-        sgautoscale_repo_commit="master",
 
     )
 

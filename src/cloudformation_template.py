@@ -234,7 +234,7 @@ def main():
 
     # Generated via http://uberjenkins.sc.couchbase.com/view/Build/job/couchbase-server-ami/
     couchbase_ami_ids_per_region = {
-        "us-east-1": "ami-0fd07d19",
+        "us-east-1": "ami-10a80506",
         "us-west-1": "ami-d45c05b4"
     }
 
@@ -246,7 +246,7 @@ def main():
 
     # Generated via http://uberjenkins.sc.couchbase.com/view/Build/job/sg-accel-ami/
     sg_accel_ami_ids_per_region = {
-        "us-east-1": "ami-74d07d62",
+        "us-east-1": "ami-abae03bd",
         "us-west-1": "ami-9a267ffa"
     }
 
