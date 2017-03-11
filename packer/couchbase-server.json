@@ -8,6 +8,7 @@
         "sudo yum install -y wget openssl awscli git docker",
         "wget {{user `couchbase_server_package_base_url`}}/{{user `couchbase_server_package`}}",
         "sudo rpm -i {{user `couchbase_server_package`}}",
+        "echo 'for i in /sys/kernel/mm/*transparent_hugepage/enabled; do echo never > $i; done' | sudo tee -a /etc/rc.local",
         "git clone https://github.com/couchbase/sync-gateway-ami.git",
         "cd sync-gateway-ami && git checkout {{ sync-gateway-ami-tag }}",
       ]
