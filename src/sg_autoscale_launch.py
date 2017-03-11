@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     print("{} called with stack name: {}  server type: {}".format(sys.argv[0], args.stack_name, args.server_type))
 
-    relaunch_sg_with_custom_config(args.stack_name, args.server_type)
+    relaunch_sg_with_custom_config(args.stack_name.strip(), args.server_type.strip())
 
 
 

@@ -113,12 +113,12 @@ def discover_target_config(sg_server_type):
         "/home/sg_accel",
     ]
     
-    if sg_server_type is SERVER_TYPE_SYNC_GATEWAY:
+    if sg_server_type == SERVER_TYPE_SYNC_GATEWAY:
         return find_existing_file_in_directories(
             sg_config_candidate_directories,
             "sync_gateway.json"
         )
-    elif sg_server_type is SERVER_TYPE_SG_ACCEL:
+    elif sg_server_type == SERVER_TYPE_SG_ACCEL:
         return find_existing_file_in_directories(
             sg_accel_config_candidate_directories,
             "sg_accel.json"
@@ -153,9 +153,9 @@ def write_custom_config(sg_server_type, target_config_file, sync_gateway_config,
     
     config_contents = "Error"
     
-    if sg_server_type is SERVER_TYPE_SYNC_GATEWAY:
+    if sg_server_type == SERVER_TYPE_SYNC_GATEWAY:
         config_contents = sync_gateway_config
-    elif sg_server_type is SERVER_TYPE_SG_ACCEL:
+    elif sg_server_type == SERVER_TYPE_SG_ACCEL:
         config_contents = sg_accel_config
     else:
         raise Exception("Unrecognized server type: {}".format(sg_server_type))
@@ -168,9 +168,9 @@ def write_custom_config(sg_server_type, target_config_file, sync_gateway_config,
 def restart_service(sg_server_type):
 
     binary_name = "Error"
-    if sg_server_type is SERVER_TYPE_SYNC_GATEWAY:
+    if sg_server_type == SERVER_TYPE_SYNC_GATEWAY:
         binary_name = "sync_gateway"
-    elif sg_server_type is SERVER_TYPE_SG_ACCEL:
+    elif sg_server_type == SERVER_TYPE_SG_ACCEL:
         binary_name = "sg_accel"
     else:
         raise Exception("Unrecognized server type: {}".format(sg_server_type))
