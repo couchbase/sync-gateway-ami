@@ -64,22 +64,6 @@ def gen_template(config):
     # ------------------------------------------------------------------------------------------------------------------
     secGrpCouchbase = cfncommon.SecGrpCouchbase(t)
 
-    # Couchbase Server Instance
-    # ------------------------------------------------------------------------------------------------------------------
-    # name = "couchbaseserver"
-    # instance = ec2.Instance(name)
-    # instance.ImageId = config.couchbase_ami_id
-    # instance.InstanceType = Ref(couchbase_server_instance_type_param)
-    # instance.SecurityGroups = [Ref(secGrpCouchbase)]
-    # instance.KeyName = Ref(keyname_param)
-    # instance.Tags = Tags(Name=name, Type="couchbaseserver")
-    # instance.UserData = sgautoscale.userDataCouchbaseServer(
-    #     Ref(couchbase_server_admin_user_param),
-    #     Ref(couchbase_server_admin_pass_param),
-    # )
-    # instance.BlockDeviceMappings=[sgautoscale.blockDeviceMapping(config, "couchbaseserver")]
-    # t.add_resource(instance)
-
     # Couchbase Server LaunchConfiguration (AutoScaleGroup)
     # ------------------------------------------------------------------------------------------------------------------
     CBServerLaunchConfiguration = autoscaling.LaunchConfiguration(

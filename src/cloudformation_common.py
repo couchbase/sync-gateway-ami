@@ -206,6 +206,8 @@ def SecGrpCouchbase(t):
         )
     )
 
+    return secGrpCouchbase
+
 
 def blockDeviceMapping(config, server_type):
     return ec2.BlockDeviceMapping(

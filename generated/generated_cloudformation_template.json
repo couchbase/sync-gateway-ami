@@ -81,7 +81,7 @@
                 },
                 "SecurityGroups": [
                     {
-                        "Ref": null
+                        "Ref": "CouchbaseSecurityGroup"
                     }
                 ],
                 "UserData": {
@@ -301,7 +301,7 @@
                 },
                 "SecurityGroups": [
                     {
-                        "Ref": null
+                        "Ref": "CouchbaseSecurityGroup"
                     }
                 ],
                 "Tags": [
@@ -356,7 +356,7 @@
                 },
                 "SecurityGroups": [
                     {
-                        "Ref": null
+                        "Ref": "CouchbaseSecurityGroup"
                     }
                 ],
                 "Tags": [
