@@ -5,7 +5,7 @@
     {
       "type": "shell",
       "inline": [
-        "sudo yum install -y wget awscli",
+        "sudo yum install -y wget awscli git docker",
         "wget {{user `couchbase_sg_accel_package_base_url`}}/{{user `couchbase_sg_accel_package`}}",
         "sudo rpm -i {{user `couchbase_sg_accel_package`}}",
         "git clone https://github.com/couchbase/sync-gateway-ami.git",
