@@ -230,9 +230,11 @@ def main():
 
     region = "us-east-1"  # TODO: make cli parameter
 
+    # TODO: should it query AMI's by name and owner instead?
+
     # Generated via http://uberjenkins.sc.couchbase.com/view/Build/job/couchbase-server-ami/
     couchbase_ami_ids_per_region = {
-        "us-east-1": "ami-dad67bcc",
+        "us-east-1": "ami-0fd07d19",
         "us-west-1": "ami-d45c05b4"
     }
 
@@ -244,7 +246,7 @@ def main():
 
     # Generated via http://uberjenkins.sc.couchbase.com/view/Build/job/sg-accel-ami/
     sg_accel_ami_ids_per_region = {
-        "us-east-1": "ami-cc8027da",
+        "us-east-1": "ami-74d07d62",
         "us-west-1": "ami-9a267ffa"
     }
 
