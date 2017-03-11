@@ -50,7 +50,7 @@ def userDataCouchbaseServer(admin_user_reference, admin_passwword_reference):
 
     commands = commonCommands() + [
         'export public_dns_name=$(curl http://169.254.169.254/latest/meta-data/public-hostname)\n',  # call ec2 instance data to get public hostname
-        'python cbbootstrap.py --cluster-id ', Ref("AWS::StackId"), ' --node-ip-addr-or-hostname ${public_dns_name} --admin-user ',  admin_user_reference, ' --admin-pass ',  admin_passwword_reference, '\n',
+        'python src/cbbootstrap.py --cluster-id ', Ref("AWS::StackId"), ' --node-ip-addr-or-hostname ${public_dns_name} --admin-user ',  admin_user_reference, ' --admin-pass ',  admin_passwword_reference, '\n',
         # TODO: for sg-autoscale cloudformation, call install_telegraf()
     ]
     return Base64(Join('', commands))
