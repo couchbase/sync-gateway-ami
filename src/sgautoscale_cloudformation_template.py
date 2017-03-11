@@ -10,7 +10,7 @@ import troposphere.ec2 as ec2
 import troposphere.elasticloadbalancing as elb
 from troposphere import iam
 from troposphere.route53 import RecordSetType
-from cloudformation_common import userDataSGAccel, userDataSyncGateway, userDataCouchbaseServer
+import cloudformation_common as cfncommon
 
 def gen_template(config):
 
@@ -24,7 +24,6 @@ def gen_template(config):
     t.add_description(
         'An Ec2-classic stack with Sync Gateway + Accelerator + Couchbase Server with horizontally scalable AutoScaleGroup'
     )
-
 
     #
     # Parameters
@@ -46,101 +45,13 @@ def gen_template(config):
         Description='The Couchbase Server Admin password',
     ))
 
-    # Security Group + Launch Keypair
+    # Security Group
     # ------------------------------------------------------------------------------------------------------------------
-    def createCouchbaseSecurityGroups(t):
+    secGrpCouchbase = cfncommon.SecGrpCouchbase(t)
 
-        # Couchbase security group
-        secGrpCouchbase = ec2.SecurityGroup('CouchbaseSecurityGroup')
-        secGrpCouchbase.GroupDescription = "Allow access to Couchbase Server"
-        secGrpCouchbase.SecurityGroupIngress = [
-            ec2.SecurityGroupRule(
-                IpProtocol="tcp",
-                FromPort="22",
-                ToPort="22",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(
-                IpProtocol="tcp",
-                FromPort="8091",
-                ToPort="8091",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # sync gw user port
-                IpProtocol="tcp",
-                FromPort="4984",
-                ToPort="4984",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # sync gw admin port
-                IpProtocol="tcp",
-                FromPort="4985",
-                ToPort="4985",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # expvars
-                IpProtocol="tcp",
-                FromPort="9876",
-                ToPort="9876",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # couchbase server
-                IpProtocol="tcp",
-                FromPort="4369",
-                ToPort="4369",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # couchbase server
-                IpProtocol="tcp",
-                FromPort="5984",
-                ToPort="5984",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # couchbase server
-                IpProtocol="tcp",
-                FromPort="8092",
-                ToPort="8092",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # couchbase server
-                IpProtocol="tcp",
-                FromPort="11209",
-                ToPort="11209",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # couchbase server
-                IpProtocol="tcp",
-                FromPort="11210",
-                ToPort="11210",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # couchbase server
-                IpProtocol="tcp",
-                FromPort="11211",
-                ToPort="11211",
-                CidrIp="0.0.0.0/0",
-            ),
-            ec2.SecurityGroupRule(   # couchbase server
-                IpProtocol="tcp",
-                FromPort="21100",
-                ToPort="21299",
-                CidrIp="0.0.0.0/0",
-            )
-
-        ]
-
-        # Add security group to template
-        t.add_resource(secGrpCouchbase)
-
-        return secGrpCouchbase
-
-
-
-    secGrpCouchbase = createCouchbaseSecurityGroups(t)
 
     # EC2 Instance profile + Mobile Testkit Role to allow pushing to CloudWatch Logs
     # ------------------------------------------------------------------------------------------------------------------
-
     # Create an IAM Role to give the EC2 instance permissions to
     # push Cloudwatch Logs, which avoids the need to bake in the
     # AWS_KEY + AWS_SECRET_KEY into an ~/.aws/credentials file or
@@ -183,60 +94,25 @@ def gen_template(config):
         instance.KeyName = Ref(keyname_param)
         instance.Tags = Tags(Name=name, Type=server_type)
         instance.IamInstanceProfile = Ref(instanceProfile)
-        instance.UserData = userDataCouchbaseServer(
+        instance.UserData = cfncommon.userDataCouchbaseServer(
             Ref(couchbase_server_admin_user_param),
             Ref(couchbase_server_admin_pass_param),
         )
         instance.BlockDeviceMappings = [blockDeviceMapping(config, server_type)]
         t.add_resource(instance)
 
-
     # Elastic Load Balancer (ELB)
     # ------------------------------------------------------------------------------------------------------------------
-    SGAutoScaleLoadBalancer = LoadBalancer(
-        "SGAutoScaleLoadBalancer",
-        ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
-            Enabled=True,
-            Timeout=120,
-        ),
-        ConnectionSettings=elb.ConnectionSettings(
-            IdleTimeout=3600,  # 1 hour to help avoid 504 GATEWAY_TIMEOUT for continuous changes feeds
-        ),
-        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
-        HealthCheck=elb.HealthCheck(
-            Target="HTTP:4984/",
-            HealthyThreshold="2",
-            UnhealthyThreshold="2",
-            Interval="5",
-            Timeout="3",
-        ),
-        Listeners=[
-            elb.Listener(
-                LoadBalancerPort="4984",
-                InstancePort="4984",
-                Protocol="HTTP",
-                InstanceProtocol="HTTP",
-            ),
-            elb.Listener(
-                LoadBalancerPort="4985",
-                InstancePort="4985",
-                Protocol="HTTP",
-                InstanceProtocol="HTTP",
-            ),
-        ],
-        CrossZone=True,
-        SecurityGroups=[GetAtt("CouchbaseSecurityGroup", "GroupId")],
-        LoadBalancerName=Join('',["SGAS-", Ref("AWS::StackName")]),
-        Scheme="internet-facing",
-    )
-    t.add_resource(SGAutoScaleLoadBalancer)
+    t.add_resource(cfncommon.SGAutoScaleLoadBalancer)
 
+    # DNS CNAME for Elastic Load Balancer (ELB)
+    # ------------------------------------------------------------------------------------------------------------------
     if config.load_balancer_dns_enabled:
         t.add_resource(
             RecordSetType(
                 title="SgAutoScaleDNS",
                 ResourceRecords=[
-                    GetAtt(SGAutoScaleLoadBalancer, "DNSName")
+                    GetAtt(cfncommon.SGAutoScaleLoadBalancer, "DNSName")
                 ],
                 TTL="900",
                 Name="{}.{}".format(config.load_balancer_dns_hostname, config.load_balancer_dns_hosted_zone_name),
@@ -245,7 +121,7 @@ def gen_template(config):
             )
         )
 
-    # SG AutoScaleGroup
+    # SG LaunchConfiguration (AutoScaleGroup)
     # ------------------------------------------------------------------------------------------------------------------
     SGLaunchConfiguration = autoscaling.LaunchConfiguration(
         "SGLaunchConfiguration",
@@ -254,27 +130,21 @@ def gen_template(config):
         IamInstanceProfile=Ref(instanceProfile),
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=userDataSyncGateway(),
+        UserData=cfncommon.userDataSyncGateway(),
         BlockDeviceMappings=[blockDeviceMapping(config, "syncgateway")]
     )
     t.add_resource(SGLaunchConfiguration)
 
-    SGAutoScalingGroup = autoscaling.AutoScalingGroup(
-        "SGAutoScalingGroup",
-        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+    # SG AutoScaleGroup
+    # ------------------------------------------------------------------------------------------------------------------
+    SGAutoScalingGroup = cfncommon.SGAutoScalingGroup(
         LaunchConfigurationName=Ref(SGLaunchConfiguration),
-        LoadBalancerNames=[Ref(SGAutoScaleLoadBalancer)],
-        Tags=[
-            autoscaling.Tag(key="Type", value="syncgateway", propogate=True),
-            autoscaling.Tag(key="Name", value="syncgateway_autoscale_instance", propogate=True),
-        ],
-        MaxSize=100,
-        MinSize=0,
-        DesiredCapacity=1,
+        LoadBalancerNames=[Ref(cfncommon.SGAutoScaleLoadBalancer)],
     )
+
     t.add_resource(SGAutoScalingGroup)
 
-    # SG Accel AutoScaleGroup
+    # SG Accel LaunchConfiguration (AutoScaleGroup)
     # ------------------------------------------------------------------------------------------------------------------
     SGAccelLaunchConfiguration = autoscaling.LaunchConfiguration(
         "SGAccelLaunchConfiguration",
@@ -283,22 +153,15 @@ def gen_template(config):
         IamInstanceProfile=Ref(instanceProfile),
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=userDataSGAccel(),
+        UserData=cfncommon.userDataSGAccel(),
         BlockDeviceMappings=[blockDeviceMapping(config, "sgaccel")]
     )
     t.add_resource(SGAccelLaunchConfiguration)
 
-    SGAccelAutoScalingGroup = autoscaling.AutoScalingGroup(
-        "SGAccelAutoScalingGroup",
-        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+    # SG Accel AutoScaleGroup
+    # ------------------------------------------------------------------------------------------------------------------
+    SGAccelAutoScalingGroup = cfncommon.SGAccelAutoScalingGroup(
         LaunchConfigurationName=Ref(SGAccelLaunchConfiguration),
-        Tags=[
-            autoscaling.Tag(key="Type", value="sgaccel", propogate=True),
-            autoscaling.Tag(key="Name", value="sgaccel_autoscale_instance", propogate=True),
-        ],
-        MaxSize=100,
-        MinSize=0,
-        DesiredCapacity=1,
     )
     t.add_resource(SGAccelAutoScalingGroup)
 
@@ -325,7 +188,7 @@ def gen_template(config):
         t.add_output([
             Output(
                 "SGAutoScaleLoadBalancerPublicDNS",
-                Value=GetAtt(SGAutoScaleLoadBalancer, "DNSName")
+                Value=GetAtt(cfncommon.SGAutoScaleLoadBalancer, "DNSName")
             ),
         ])
 
@@ -341,8 +204,6 @@ def blockDeviceMapping(config, server_type):
             VolumeType=config.block_device_volume_type
         )
     )
-
-
 
 
 

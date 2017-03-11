@@ -1,6 +1,193 @@
 
 from troposphere import Base64, Join, Ref
+import collections
+from troposphere import Ref, Template, Parameter, Tags, Join, GetAtt, Output
+import troposphere.autoscaling as autoscaling
+from troposphere.elasticloadbalancing import LoadBalancer
+from troposphere import GetAZs
+import troposphere.ec2 as ec2
+import troposphere.elasticloadbalancing as elb
+from troposphere import iam
+from troposphere.route53 import RecordSetType
+
 import sg_launch
+
+
+# Elastic Load Balancer (ELB)
+# ------------------------------------------------------------------------------------------------------------------
+SGAutoScaleLoadBalancer = LoadBalancer(
+    "SGAutoScaleLoadBalancer",
+    ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
+        Enabled=True,
+        Timeout=120,
+    ),
+    ConnectionSettings=elb.ConnectionSettings(
+        IdleTimeout=3600,  # 1 hour to help avoid 504 GATEWAY_TIMEOUT for continuous changes feeds
+    ),
+    AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+    HealthCheck=elb.HealthCheck(
+        Target="HTTP:4984/",
+        HealthyThreshold="2",
+        UnhealthyThreshold="2",
+        Interval="5",
+        Timeout="3",
+    ),
+    Listeners=[
+        elb.Listener(
+            LoadBalancerPort="4984",
+            InstancePort="4984",
+            Protocol="HTTP",
+            InstanceProtocol="HTTP",
+        ),
+        elb.Listener(
+            LoadBalancerPort="4985",
+            InstancePort="4985",
+            Protocol="HTTP",
+            InstanceProtocol="HTTP",
+        ),
+    ],
+    CrossZone=True,
+    SecurityGroups=[GetAtt("CouchbaseSecurityGroup", "GroupId")],
+    LoadBalancerName=Join('', ["SGAS-", Ref("AWS::StackName")]),
+    Scheme="internet-facing",
+)
+
+# SG AutoScaleGroup
+# ------------------------------------------------------------------------------------------------------------------
+def SGAutoScalingGroup(LaunchConfigurationName, LoadBalancerNames):
+    SGAutoScalingGroup = autoscaling.AutoScalingGroup(
+        "SGAutoScalingGroup",
+        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        LaunchConfigurationName=LaunchConfigurationName,
+        LoadBalancerNames=LoadBalancerNames,
+        Tags=[
+            autoscaling.Tag(key="Type", value="syncgateway", propogate=True),
+            autoscaling.Tag(key="Name", value="syncgateway_autoscale_instance", propogate=True),
+        ],
+        MaxSize=100,
+        MinSize=0,
+        DesiredCapacity=1,
+    )
+    return SGAutoScalingGroup
+
+def SGAccelAutoScalingGroup(LaunchConfigurationName):
+    SGAccelAutoScalingGroup = autoscaling.AutoScalingGroup(
+        "SGAccelAutoScalingGroup",
+        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        LaunchConfigurationName=LaunchConfigurationName,
+        Tags=[
+            autoscaling.Tag(key="Type", value="sgaccel", propogate=True),
+            autoscaling.Tag(key="Name", value="sgaccel_autoscale_instance", propogate=True),
+        ],
+        MaxSize=100,
+        MinSize=0,
+        DesiredCapacity=1,
+    )
+
+def SecGrpCouchbase(t):
+
+    def tcpIngressWithinGroup(name, port, group, groupname):
+        return ec2.SecurityGroupIngress(
+            name,
+            GroupName=Ref(group),
+            IpProtocol="tcp",
+            FromPort=port,
+            ToPort=port,
+            SourceSecurityGroupId=GetAtt(groupname, "GroupId"),
+        )
+
+    secGrpCouchbase = ec2.SecurityGroup('CouchbaseSecurityGroup')
+    secGrpCouchbase.GroupDescription = "External Access to Sync Gateway user port"
+    t.add_resource(secGrpCouchbase)
+
+    # Ingress: Public
+    # ------------------------------------------------------------------------------------------------------------------
+    t.add_resource(ec2.SecurityGroupIngress(
+        'IngressSSH',
+        GroupName=Ref(secGrpCouchbase),
+        IpProtocol="tcp",
+        FromPort="22",
+        ToPort="22",
+        CidrIp="0.0.0.0/0",
+    ))
+    t.add_resource(ec2.SecurityGroupIngress(
+        'IngressSyncGatewayUser',
+        GroupName=Ref(secGrpCouchbase),
+        IpProtocol="tcp",
+        FromPort="4984",
+        ToPort="4984",
+        CidrIp="0.0.0.0/0",
+    ))
+
+    # Ingress: within Security Group
+    # ------------------------------------------------------------------------------------------------------------------
+    t.add_resource(
+        tcpIngressWithinGroup(
+            name='IngressCouchbaseErlangPortMapper',
+            port="4369",
+            group=secGrpCouchbase,
+            groupname="CouchbaseSecurityGroup",
+        )
+    )
+    t.add_resource(
+        tcpIngressWithinGroup(
+            name='IngressSyncGatewayAdmin',
+            port="4985",
+            group=secGrpCouchbase,
+            groupname="CouchbaseSecurityGroup",
+        )
+    )
+    t.add_resource(
+        tcpIngressWithinGroup(
+            name='IngressCouchbaseWebAdmin',
+            port="8091",
+            group=secGrpCouchbase,
+            groupname="CouchbaseSecurityGroup",
+        )
+    )
+    t.add_resource(
+        tcpIngressWithinGroup(
+            name='IngressCouchbaseAPI',
+            port="8092",
+            group=secGrpCouchbase,
+            groupname="CouchbaseSecurityGroup",
+        )
+    )
+    t.add_resource(
+        tcpIngressWithinGroup(
+            name='IngressCouchbaseInternalBucketPort',
+            port="11209",
+            group=secGrpCouchbase,
+            groupname="CouchbaseSecurityGroup",
+        )
+    )
+    t.add_resource(
+        tcpIngressWithinGroup(
+            name='IngressCouchbaseInternalExternalBucketPort',
+            port="11210",
+            group=secGrpCouchbase,
+            groupname="CouchbaseSecurityGroup",
+        )
+    )
+    t.add_resource(
+        tcpIngressWithinGroup(
+            name='IngressCouchbaseClientInterfaceProxy',
+            port="11211",
+            group=secGrpCouchbase,
+            groupname="CouchbaseSecurityGroup",
+        )
+    )
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'IngressCouchbaseNodeDataExchange',
+            GroupName=Ref(secGrpCouchbase),
+            IpProtocol="tcp",
+            FromPort="21100",
+            ToPort="21299",
+            SourceSecurityGroupId=GetAtt("CouchbaseSecurityGroup", "GroupId"),
+        )
+    )
+
 
 # The "user data" launch script that runs on startup on SG and SG Accel EC2 instances.
 # The output from this script is available on the ec2 instance in /var/log/cloud-init-output.log

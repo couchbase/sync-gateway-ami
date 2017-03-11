@@ -11,6 +11,7 @@ import troposphere.elasticloadbalancing as elb
 from troposphere import iam
 from troposphere.route53 import RecordSetType
 import sgautoscale_cloudformation_template as sgautoscale
+import cloudformation_common as cfncommon
 
 def gen_template(config):
 
@@ -62,98 +63,7 @@ def gen_template(config):
     
     # Security Group
     # ------------------------------------------------------------------------------------------------------------------
-    secGrpCouchbase = ec2.SecurityGroup('CouchbaseSecurityGroup')
-    secGrpCouchbase.GroupDescription = "External Access to Sync Gateway user port"
-    t.add_resource(secGrpCouchbase)
-
-    # Ingress: Public
-    # ------------------------------------------------------------------------------------------------------------------
-    t.add_resource(ec2.SecurityGroupIngress(
-        'IngressSSH',
-        GroupName=Ref(secGrpCouchbase),
-        IpProtocol="tcp",
-        FromPort="22",
-        ToPort="22",
-        CidrIp="0.0.0.0/0",
-    ))
-    t.add_resource(ec2.SecurityGroupIngress(
-        'IngressSyncGatewayUser',
-        GroupName=Ref(secGrpCouchbase),
-        IpProtocol="tcp",
-        FromPort="4984",
-        ToPort="4984",
-        CidrIp="0.0.0.0/0",
-    ))
-
-    # Ingress: within Security Group
-    # ------------------------------------------------------------------------------------------------------------------
-    t.add_resource(
-        tcpIngressWithinGroup(
-            name='IngressCouchbaseErlangPortMapper',
-            port="4369",
-            group=secGrpCouchbase,
-            groupname="CouchbaseSecurityGroup",
-        )
-    )
-    t.add_resource(
-        tcpIngressWithinGroup(
-            name='IngressSyncGatewayAdmin',
-            port="4985",
-            group=secGrpCouchbase,
-            groupname="CouchbaseSecurityGroup",
-        )
-    )
-    t.add_resource(
-        tcpIngressWithinGroup(
-            name='IngressCouchbaseWebAdmin',
-            port="8091",
-            group=secGrpCouchbase,
-            groupname="CouchbaseSecurityGroup",
-        )
-    )
-    t.add_resource(
-        tcpIngressWithinGroup(
-            name='IngressCouchbaseAPI',
-            port="8092",
-            group=secGrpCouchbase,
-            groupname="CouchbaseSecurityGroup",
-        )
-    )
-    t.add_resource(
-        tcpIngressWithinGroup(
-            name='IngressCouchbaseInternalBucketPort',
-            port="11209",
-            group=secGrpCouchbase,
-            groupname="CouchbaseSecurityGroup",
-        )
-    )
-    t.add_resource(
-        tcpIngressWithinGroup(
-            name='IngressCouchbaseInternalExternalBucketPort',
-            port="11210",
-            group=secGrpCouchbase,
-            groupname="CouchbaseSecurityGroup",
-        )
-    )
-    t.add_resource(
-        tcpIngressWithinGroup(
-            name='IngressCouchbaseClientInterfaceProxy',
-            port="11211",
-            group=secGrpCouchbase,
-            groupname="CouchbaseSecurityGroup",
-        )
-    )
-    t.add_resource(
-        ec2.SecurityGroupIngress(
-            'IngressCouchbaseNodeDataExchange',
-            GroupName=Ref(secGrpCouchbase),
-            IpProtocol="tcp",
-            FromPort="21100",
-            ToPort="21299",
-            SourceSecurityGroupId=GetAtt("CouchbaseSecurityGroup", "GroupId"),
-        )
-    )
-
+    secGrpCouchbase = cfncommon.SecGrpCouchbase(t)
 
     # Couchbase Server Instance
     # ------------------------------------------------------------------------------------------------------------------
@@ -199,17 +109,6 @@ def gen_template(config):
 
 
     return t.to_json()
-
-
-def tcpIngressWithinGroup(name, port, group, groupname):
-    return ec2.SecurityGroupIngress(
-        name,
-        GroupName=Ref(group),
-        IpProtocol="tcp",
-        FromPort=port,
-        ToPort=port,
-        SourceSecurityGroupId=GetAtt(groupname, "GroupId"),
-    )
 
 
 # Main
