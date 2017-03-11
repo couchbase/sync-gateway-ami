@@ -10,7 +10,6 @@ import troposphere.ec2 as ec2
 import troposphere.elasticloadbalancing as elb
 from troposphere import iam
 from troposphere.route53 import RecordSetType
-import sgautoscale_cloudformation_template as sgautoscale
 import cloudformation_common as cfncommon
 
 def gen_template(config):
@@ -67,19 +66,42 @@ def gen_template(config):
 
     # Couchbase Server Instance
     # ------------------------------------------------------------------------------------------------------------------
-    name = "couchbaseserver"
-    instance = ec2.Instance(name)
-    instance.ImageId = config.couchbase_ami_id
-    instance.InstanceType = Ref(couchbase_server_instance_type_param)
-    instance.SecurityGroups = [Ref(secGrpCouchbase)]
-    instance.KeyName = Ref(keyname_param)
-    instance.Tags = Tags(Name=name, Type="couchbaseserver")
-    instance.UserData = sgautoscale.userDataCouchbaseServer(
-        Ref(couchbase_server_admin_user_param),
-        Ref(couchbase_server_admin_pass_param),
+    # name = "couchbaseserver"
+    # instance = ec2.Instance(name)
+    # instance.ImageId = config.couchbase_ami_id
+    # instance.InstanceType = Ref(couchbase_server_instance_type_param)
+    # instance.SecurityGroups = [Ref(secGrpCouchbase)]
+    # instance.KeyName = Ref(keyname_param)
+    # instance.Tags = Tags(Name=name, Type="couchbaseserver")
+    # instance.UserData = sgautoscale.userDataCouchbaseServer(
+    #     Ref(couchbase_server_admin_user_param),
+    #     Ref(couchbase_server_admin_pass_param),
+    # )
+    # instance.BlockDeviceMappings=[sgautoscale.blockDeviceMapping(config, "couchbaseserver")]
+    # t.add_resource(instance)
+
+    # Couchbase Server LaunchConfiguration (AutoScaleGroup)
+    # ------------------------------------------------------------------------------------------------------------------
+    CBServerLaunchConfiguration = autoscaling.LaunchConfiguration(
+        "CBServerLaunchConfiguration",
+        ImageId=config.couchbase_ami_id,
+        KeyName=Ref(keyname_param),
+        InstanceType=Ref(couchbase_server_instance_type_param),
+        SecurityGroups=[Ref(secGrpCouchbase)],
+        UserData=cfncommon.userDataCouchbaseServer(
+            Ref(couchbase_server_admin_user_param),
+            Ref(couchbase_server_admin_pass_param),
+        ),
+        BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "couchbaseserver")]
     )
-    instance.BlockDeviceMappings=[sgautoscale.blockDeviceMapping(config, "couchbaseserver")]
-    t.add_resource(instance)
+    t.add_resource(CBServerLaunchConfiguration)
+
+    # CB Server AutoScaleGroup
+    # ------------------------------------------------------------------------------------------------------------------
+    CBServerAutoScalingGroup = cfncommon.CBServerAutoScalingGroup(
+        LaunchConfigurationName=Ref(CBServerLaunchConfiguration),
+    )
+    t.add_resource(CBServerAutoScalingGroup)
 
     # Sync Gateway Instance
     # ------------------------------------------------------------------------------------------------------------------
@@ -90,8 +112,8 @@ def gen_template(config):
     instance.SecurityGroups = [Ref(secGrpCouchbase)]
     instance.KeyName = Ref(keyname_param)
     instance.Tags = Tags(Name=name, Type="syncgateway")
-    instance.UserData = sgautoscale.userDataSyncGateway()
-    instance.BlockDeviceMappings=[sgautoscale.blockDeviceMapping(config, "syncgateway")]
+    instance.UserData = cfncommon.userDataSyncGateway()
+    instance.BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "syncgateway")]
     t.add_resource(instance)
     
     # SG Accel Instance
@@ -103,10 +125,9 @@ def gen_template(config):
     instance.SecurityGroups = [Ref(secGrpCouchbase)]
     instance.KeyName = Ref(keyname_param)
     instance.Tags = Tags(Name=name, Type="sgaccel")
-    instance.UserData = sgautoscale.userDataSGAccel()
-    instance.BlockDeviceMappings=[sgautoscale.blockDeviceMapping(config, "sgaccel")]
+    instance.UserData = cfncommon.userDataSGAccel()
+    instance.BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "sgaccel")]
     t.add_resource(instance)
-
 
     return t.to_json()
 

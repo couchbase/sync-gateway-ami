@@ -98,7 +98,7 @@ def gen_template(config):
             Ref(couchbase_server_admin_user_param),
             Ref(couchbase_server_admin_pass_param),
         )
-        instance.BlockDeviceMappings = [blockDeviceMapping(config, server_type)]
+        instance.BlockDeviceMappings = [cfncommon.blockDeviceMapping(config, server_type)]
         t.add_resource(instance)
 
     # Elastic Load Balancer (ELB)
@@ -131,7 +131,7 @@ def gen_template(config):
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
         UserData=cfncommon.userDataSyncGateway(),
-        BlockDeviceMappings=[blockDeviceMapping(config, "syncgateway")]
+        BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "syncgateway")]
     )
     t.add_resource(SGLaunchConfiguration)
 
@@ -141,7 +141,6 @@ def gen_template(config):
         LaunchConfigurationName=Ref(SGLaunchConfiguration),
         LoadBalancerNames=[Ref(cfncommon.SGAutoScaleLoadBalancer)],
     )
-
     t.add_resource(SGAutoScalingGroup)
 
     # SG Accel LaunchConfiguration (AutoScaleGroup)
@@ -154,7 +153,7 @@ def gen_template(config):
         InstanceType=sync_gateway_server_type,
         SecurityGroups=[Ref(secGrpCouchbase)],
         UserData=cfncommon.userDataSGAccel(),
-        BlockDeviceMappings=[blockDeviceMapping(config, "sgaccel")]
+        BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "sgaccel")]
     )
     t.add_resource(SGAccelLaunchConfiguration)
 
@@ -178,7 +177,7 @@ def gen_template(config):
         instance.IamInstanceProfile = Ref(instanceProfile)
         instance.UserData = userDataSGAccel()
         instance.Tags = Tags(Name=name, Type=server_type)
-        instance.BlockDeviceMappings = [blockDeviceMapping(config, server_type)]
+        instance.BlockDeviceMappings = [cfncommon.blockDeviceMapping(config, server_type)]
 
         t.add_resource(instance)
 
@@ -195,15 +194,7 @@ def gen_template(config):
     return t.to_json()
 
 
-def blockDeviceMapping(config, server_type):
-    return ec2.BlockDeviceMapping(
-        DeviceName=config.block_device_name,
-        Ebs=ec2.EBSBlockDevice(
-            DeleteOnTermination=True,
-            VolumeSize=config.block_device_volume_size_by_server_type[server_type],
-            VolumeType=config.block_device_volume_type
-        )
-    )
+
 
 
 

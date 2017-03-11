@@ -55,7 +55,7 @@ SGAutoScaleLoadBalancer = LoadBalancer(
 # SG AutoScaleGroup
 # ------------------------------------------------------------------------------------------------------------------
 def SGAutoScalingGroup(LaunchConfigurationName, LoadBalancerNames):
-    SGAutoScalingGroup = autoscaling.AutoScalingGroup(
+    return autoscaling.AutoScalingGroup(
         "SGAutoScalingGroup",
         AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
         LaunchConfigurationName=LaunchConfigurationName,
@@ -68,10 +68,28 @@ def SGAutoScalingGroup(LaunchConfigurationName, LoadBalancerNames):
         MinSize=0,
         DesiredCapacity=1,
     )
-    return SGAutoScalingGroup
+
+
+# CBServer AutoScalingGroup
+# ------------------------------------------------------------------------------------------------------------------
+def CBServerAutoScalingGroup(LaunchConfigurationName):
+    return autoscaling.AutoScalingGroup(
+        "CBServerAutoScalingGroup",
+        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        LaunchConfigurationName=LaunchConfigurationName,
+        Tags=[
+            autoscaling.Tag(key="Type", value="couchbaseserver", propogate=True),
+            autoscaling.Tag(key="Name", value="couchbaseserver_autoscale_instance", propogate=True),
+        ],
+        MaxSize=100,
+        MinSize=0,
+        DesiredCapacity=3,
+    )
+
+
 
 def SGAccelAutoScalingGroup(LaunchConfigurationName):
-    SGAccelAutoScalingGroup = autoscaling.AutoScalingGroup(
+    return autoscaling.AutoScalingGroup(
         "SGAccelAutoScalingGroup",
         AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
         LaunchConfigurationName=LaunchConfigurationName,
@@ -185,6 +203,17 @@ def SecGrpCouchbase(t):
             FromPort="21100",
             ToPort="21299",
             SourceSecurityGroupId=GetAtt("CouchbaseSecurityGroup", "GroupId"),
+        )
+    )
+
+
+def blockDeviceMapping(config, server_type):
+    return ec2.BlockDeviceMapping(
+        DeviceName=config.block_device_name,
+        Ebs=ec2.EBSBlockDevice(
+            DeleteOnTermination=True,
+            VolumeSize=config.block_device_volume_size_by_server_type[server_type],
+            VolumeType=config.block_device_volume_type
         )
     )
 
