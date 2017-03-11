@@ -9,7 +9,8 @@
         "wget {{user `couchbase_server_package_base_url`}}/{{user `couchbase_server_package`}}",
         "sudo rpm -i {{user `couchbase_server_package`}}",
         "git clone https://github.com/couchbase/sync-gateway-ami.git",
-        "cd sync-gateway-ami && git checkout {{ sync-gateway-ami-tag }}"
+        "cd sync-gateway-ami",
+        "git checkout {{user `couchbase_sync_gateway_version`}}"
       ]
     },
     {

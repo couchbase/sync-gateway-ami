@@ -14,7 +14,8 @@
         "GOPATH=${HOME}/go go get -u -v -t github.com/couchbaselabs/sgload",
         "GOPATH=${HOME}/go go get -u -v -t github.com/couchbaselabs/gateload",
         "git clone https://github.com/couchbase/sync-gateway-ami.git",
-        "cd sync-gateway-ami && git checkout {{ sync-gateway-ami-tag }}",
+        "cd sync-gateway-ami",
+        "git checkout {{user `couchbase_sync_gateway_version`}}",
         "echo '* hard nofile 500000' | sudo tee -a /etc/security/limits.d/20-nofiles.conf",
         "echo '* soft nofile 500000' | sudo tee -a /etc/security/limits.d/20-nofiles.conf"
       ]
