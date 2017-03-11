@@ -75,9 +75,7 @@ sg_accel_config = """
 """
 
 
-
-
-def relaunch_sg_with_custom_config(stack_name):
+def relaunch_sg_with_custom_config(stack_name, server_type):
 
     # Use cbbootrap to call REST API to discover the IP address of the initial couchbase server node
     couchbase_server_ip = cbbootstrap.discover_initial_couchbase_server_ip(stack_name)
@@ -88,22 +86,32 @@ def relaunch_sg_with_custom_config(stack_name):
     template = Template(sg_accel_config)
     sg_accel_config_rendered = template.substitute(couchbase_server_ip=couchbase_server_ip)
 
-    sg_launch.main(sync_gateway_config_rendered, sg_accel_config_rendered)
+    sg_launch.main(
+        sync_gateway_config_rendered,
+        sg_accel_config_rendered,
+        server_type,
+    )
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stack-name", help="The name of the cloudformation stack, so that cbbootstrap can discover couchbase server IP address", required=True)
+
+    parser.add_argument(
+        "--stack-name",
+        help="The name of the cloudformation stack, so that cbbootstrap can discover couchbase server IP address",
+        required=True,
+    )
+    parser.add_argument(
+        "--server-type",
+        help="The server type: sg or sg-accel",
+        required=True,
+    )
     args = parser.parse_args()
 
-    print("{} called with stack name: {}".format(sys.argv[0], args.stack_name))
+    print("{} called with stack name: {}  server type: {}".format(sys.argv[0], args.stack_name, args.server_type))
 
-    server_type = sg_launch.discover_server_type()
-
-    # For sync gateways, relaunch sync gateway with correct config.
-    if sg_launch.is_sync_gateway_or_accel(server_type):  # TODO
-        relaunch_sg_with_custom_config(args.stack_name)
+    relaunch_sg_with_custom_config(args.stack_name, args.server_type)
 
 
 

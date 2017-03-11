@@ -70,18 +70,13 @@ import os
 import time
 import urllib2
 
-SERVER_TYPE_SYNC_GATEWAY = "SERVER_TYPE_SYNC_GATEWAY"
-SERVER_TYPE_SG_ACCEL = "SERVER_TYPE_SG_ACCEL"
+SERVER_TYPE_SYNC_GATEWAY = "sg"
+SERVER_TYPE_SG_ACCEL = "sg-accel"
 SERVER_TYPE_LOAD_GEN = "SERVER_TYPE_LOAD_GEN"
 SERVER_TYPE_COUCHBASE_SERVER = "SERVER_TYPE_COUCHBASE_SERVER"
 
-def main(sync_gateway_config, sg_accel_config):
-    
-    server_type = discover_server_type()
 
-    if not is_sync_gateway_or_accel(server_type):
-        # For load generators and couchbase servers, nothing else to do
-        return 
+def main(sync_gateway_config, sg_accel_config, server_type):
 
     target_config_file = discover_target_config(server_type)
 
@@ -106,50 +101,6 @@ def main(sync_gateway_config, sg_accel_config):
         print("Service not up yet, sleeping {} seconds and retrying".format(i)) 
         time.sleep(i)
 
-
-def is_sync_gateway_or_accel(sg_server_type):
-
-    if sg_server_type in [SERVER_TYPE_LOAD_GEN, SERVER_TYPE_COUCHBASE_SERVER]:
-        return False
-
-    return True
-
-
-def discover_server_type():
-    """
-    This figures out whether this script is running on a Sync Gateway or an SG Accel
-
-    Alternative approaches to make it more OS-agnostic:
-
-    - Probe for path locations
-    - Could do a ps and look for sync_gateway process
-
-    """
-
-    is_sync_gateway = False
-    is_sg_accel = False
-    
-    try:
-        pwd.getpwnam('sync_gateway')
-        return SERVER_TYPE_SYNC_GATEWAY
-    except KeyError:
-        pass
-
-    try:
-        pwd.getpwnam('sg_accel')
-        return SERVER_TYPE_SG_ACCEL
-    except KeyError:
-        pass
-
-    try:
-        pwd.getpwnam('couchbase')
-        return SERVER_TYPE_COUCHBASE_SERVER
-    except KeyError:
-        pass
-
-    # if none of the other types, assume it's a load generator
-    return SERVER_TYPE_LOAD_GEN
-        
 
 def discover_target_config(sg_server_type):
 
@@ -232,7 +183,12 @@ def restart_service(sg_server_type):
 
     
 if __name__ == "__main__":
-   main(default_sync_gateway_config, default_sg_accel_config)
+
+   main(
+        default_sync_gateway_config,
+        default_sg_accel_config,
+        SERVER_TYPE_SYNC_GATEWAY,  # currently this script is only called directly
+   )
 
 
 
