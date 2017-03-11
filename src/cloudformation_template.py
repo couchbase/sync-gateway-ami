@@ -64,6 +64,11 @@ def gen_template(config):
     # ------------------------------------------------------------------------------------------------------------------
     secGrpCouchbase = cfncommon.SecGrpCouchbase(t)
 
+    # Load Balancer
+    # ------------------------------------------------------------------------------------------------------------------
+    SGAutoScaleLoadBalancer = cfncommon.SGAutoScaleLoadBalancer()
+    t.add_resource(SGAutoScaleLoadBalancer)
+
     # Couchbase Server LaunchConfiguration (AutoScaleGroup)
     # ------------------------------------------------------------------------------------------------------------------
     CBServerLaunchConfiguration = autoscaling.LaunchConfiguration(
@@ -87,31 +92,47 @@ def gen_template(config):
     )
     t.add_resource(CBServerAutoScalingGroup)
 
-    # Sync Gateway Instance
+
+    # SG LaunchConfiguration (AutoScaleGroup)
     # ------------------------------------------------------------------------------------------------------------------
-    name = "syncgateway"
-    instance = ec2.Instance(name)
-    instance.ImageId = config.sync_gateway_ami_id
-    instance.InstanceType = Ref(sync_gateway_instance_type_param)
-    instance.SecurityGroups = [Ref(secGrpCouchbase)]
-    instance.KeyName = Ref(keyname_param)
-    instance.Tags = Tags(Name=name, Type="syncgateway")
-    instance.UserData = cfncommon.userDataSyncGateway()
-    instance.BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "syncgateway")]
-    t.add_resource(instance)
-    
-    # SG Accel Instance
+    SGLaunchConfiguration = autoscaling.LaunchConfiguration(
+        "SGLaunchConfiguration",
+        ImageId=config.sync_gateway_ami_id,
+        KeyName=Ref(keyname_param),
+        InstanceType=Ref(sync_gateway_instance_type_param),
+        SecurityGroups=[Ref(secGrpCouchbase)],
+        UserData=cfncommon.userDataSyncGateway(),
+        BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "syncgateway")]
+    )
+    t.add_resource(SGLaunchConfiguration)
+
+    # SG AutoScaleGroup
     # ------------------------------------------------------------------------------------------------------------------
-    name = "sgaccel"
-    instance = ec2.Instance(name)
-    instance.ImageId = config.sg_accel_ami_id
-    instance.InstanceType = Ref(sg_accel_instance_type_param)
-    instance.SecurityGroups = [Ref(secGrpCouchbase)]
-    instance.KeyName = Ref(keyname_param)
-    instance.Tags = Tags(Name=name, Type="sgaccel")
-    instance.UserData = cfncommon.userDataSGAccel()
-    instance.BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "sgaccel")]
-    t.add_resource(instance)
+    SGAutoScalingGroup = cfncommon.SGAutoScalingGroup(
+        LaunchConfigurationName=Ref(SGLaunchConfiguration),
+        LoadBalancerNames=[Ref(SGAutoScaleLoadBalancer)],
+    )
+    t.add_resource(SGAutoScalingGroup)
+
+    # SG Accel LaunchConfiguration (AutoScaleGroup)
+    # ------------------------------------------------------------------------------------------------------------------
+    SGAccelLaunchConfiguration = autoscaling.LaunchConfiguration(
+        "SGAccelLaunchConfiguration",
+        ImageId=config.sg_accel_ami_id,
+        KeyName=Ref(keyname_param),
+        InstanceType=Ref(sg_accel_instance_type_param),
+        SecurityGroups=[Ref(secGrpCouchbase)],
+        UserData=cfncommon.userDataSGAccel(),
+        BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "sgaccel")]
+    )
+    t.add_resource(SGAccelLaunchConfiguration)
+
+    # SG Accel AutoScaleGroup
+    # ------------------------------------------------------------------------------------------------------------------
+    SGAccelAutoScalingGroup = cfncommon.SGAccelAutoScalingGroup(
+        LaunchConfigurationName=Ref(SGAccelLaunchConfiguration),
+    )
+    t.add_resource(SGAccelAutoScalingGroup)
 
     return t.to_json()
 

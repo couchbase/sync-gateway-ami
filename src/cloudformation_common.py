@@ -15,42 +15,43 @@ import sg_launch
 
 # Elastic Load Balancer (ELB)
 # ------------------------------------------------------------------------------------------------------------------
-SGAutoScaleLoadBalancer = LoadBalancer(
-    "SGAutoScaleLoadBalancer",
-    ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
-        Enabled=True,
-        Timeout=120,
-    ),
-    ConnectionSettings=elb.ConnectionSettings(
-        IdleTimeout=3600,  # 1 hour to help avoid 504 GATEWAY_TIMEOUT for continuous changes feeds
-    ),
-    AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
-    HealthCheck=elb.HealthCheck(
-        Target="HTTP:4984/",
-        HealthyThreshold="2",
-        UnhealthyThreshold="2",
-        Interval="5",
-        Timeout="3",
-    ),
-    Listeners=[
-        elb.Listener(
-            LoadBalancerPort="4984",
-            InstancePort="4984",
-            Protocol="HTTP",
-            InstanceProtocol="HTTP",
+def SGAutoScaleLoadBalancer():
+    return LoadBalancer(
+        "SGAutoScaleLoadBalancer",
+        ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
+            Enabled=True,
+            Timeout=120,
         ),
-        elb.Listener(
-            LoadBalancerPort="4985",
-            InstancePort="4985",
-            Protocol="HTTP",
-            InstanceProtocol="HTTP",
+        ConnectionSettings=elb.ConnectionSettings(
+            IdleTimeout=3600,  # 1 hour to help avoid 504 GATEWAY_TIMEOUT for continuous changes feeds
         ),
-    ],
-    CrossZone=True,
-    SecurityGroups=[GetAtt("CouchbaseSecurityGroup", "GroupId")],
-    LoadBalancerName=Join('', ["SGAS-", Ref("AWS::StackName")]),
-    Scheme="internet-facing",
-)
+        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        HealthCheck=elb.HealthCheck(
+            Target="HTTP:4984/",
+            HealthyThreshold="2",
+            UnhealthyThreshold="2",
+            Interval="5",
+            Timeout="3",
+        ),
+        Listeners=[
+            elb.Listener(
+                LoadBalancerPort="4984",
+                InstancePort="4984",
+                Protocol="HTTP",
+                InstanceProtocol="HTTP",
+            ),
+            elb.Listener(
+                LoadBalancerPort="4985",
+                InstancePort="4985",
+                Protocol="HTTP",
+                InstanceProtocol="HTTP",
+            ),
+        ],
+        CrossZone=True,
+        SecurityGroups=[GetAtt("CouchbaseSecurityGroup", "GroupId")],
+        LoadBalancerName=Join('', ["SGAS-", Ref("AWS::StackName")]),
+        Scheme="internet-facing",
+    )
 
 # SG AutoScaleGroup
 # ------------------------------------------------------------------------------------------------------------------

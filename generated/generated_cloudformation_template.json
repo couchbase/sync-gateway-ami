@@ -280,7 +280,33 @@
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },
-        "sgaccel": {
+        "SGAccelAutoScalingGroup": {
+            "Properties": {
+                "AvailabilityZones": {
+                    "Fn::GetAZs": ""
+                },
+                "DesiredCapacity": 1,
+                "LaunchConfigurationName": {
+                    "Ref": "SGAccelLaunchConfiguration"
+                },
+                "MaxSize": 100,
+                "MinSize": 0,
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "PropagateAtLaunch": true,
+                        "Value": "sgaccel"
+                    },
+                    {
+                        "Key": "Name",
+                        "PropagateAtLaunch": true,
+                        "Value": "sgaccel_autoscale_instance"
+                    }
+                ]
+            },
+            "Type": "AWS::AutoScaling::AutoScalingGroup"
+        },
+        "SGAccelLaunchConfiguration": {
             "Properties": {
                 "BlockDeviceMappings": [
                     {
@@ -304,16 +330,6 @@
                         "Ref": "CouchbaseSecurityGroup"
                     }
                 ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "sgaccel"
-                    },
-                    {
-                        "Key": "Type",
-                        "Value": "sgaccel"
-                    }
-                ],
                 "UserData": {
                     "Fn::Base64": {
                         "Fn::Join": [
@@ -333,9 +349,97 @@
                     }
                 }
             },
-            "Type": "AWS::EC2::Instance"
+            "Type": "AWS::AutoScaling::LaunchConfiguration"
         },
-        "syncgateway": {
+        "SGAutoScaleLoadBalancer": {
+            "Properties": {
+                "AvailabilityZones": {
+                    "Fn::GetAZs": ""
+                },
+                "ConnectionDrainingPolicy": {
+                    "Enabled": true,
+                    "Timeout": 120
+                },
+                "ConnectionSettings": {
+                    "IdleTimeout": 3600
+                },
+                "CrossZone": "true",
+                "HealthCheck": {
+                    "HealthyThreshold": "2",
+                    "Interval": "5",
+                    "Target": "HTTP:4984/",
+                    "Timeout": "3",
+                    "UnhealthyThreshold": "2"
+                },
+                "Listeners": [
+                    {
+                        "InstancePort": "4984",
+                        "InstanceProtocol": "HTTP",
+                        "LoadBalancerPort": "4984",
+                        "Protocol": "HTTP"
+                    },
+                    {
+                        "InstancePort": "4985",
+                        "InstanceProtocol": "HTTP",
+                        "LoadBalancerPort": "4985",
+                        "Protocol": "HTTP"
+                    }
+                ],
+                "LoadBalancerName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "SGAS-",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "Scheme": "internet-facing",
+                "SecurityGroups": [
+                    {
+                        "Fn::GetAtt": [
+                            "CouchbaseSecurityGroup",
+                            "GroupId"
+                        ]
+                    }
+                ]
+            },
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer"
+        },
+        "SGAutoScalingGroup": {
+            "Properties": {
+                "AvailabilityZones": {
+                    "Fn::GetAZs": ""
+                },
+                "DesiredCapacity": 1,
+                "LaunchConfigurationName": {
+                    "Ref": "SGLaunchConfiguration"
+                },
+                "LoadBalancerNames": [
+                    {
+                        "Ref": "SGAutoScaleLoadBalancer"
+                    }
+                ],
+                "MaxSize": 100,
+                "MinSize": 0,
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "PropagateAtLaunch": true,
+                        "Value": "syncgateway"
+                    },
+                    {
+                        "Key": "Name",
+                        "PropagateAtLaunch": true,
+                        "Value": "syncgateway_autoscale_instance"
+                    }
+                ]
+            },
+            "Type": "AWS::AutoScaling::AutoScalingGroup"
+        },
+        "SGLaunchConfiguration": {
             "Properties": {
                 "BlockDeviceMappings": [
                     {
@@ -359,16 +463,6 @@
                         "Ref": "CouchbaseSecurityGroup"
                     }
                 ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "syncgateway"
-                    },
-                    {
-                        "Key": "Type",
-                        "Value": "syncgateway"
-                    }
-                ],
                 "UserData": {
                     "Fn::Base64": {
                         "Fn::Join": [
@@ -388,7 +482,7 @@
                     }
                 }
             },
-            "Type": "AWS::EC2::Instance"
+            "Type": "AWS::AutoScaling::LaunchConfiguration"
         }
     }
 }
