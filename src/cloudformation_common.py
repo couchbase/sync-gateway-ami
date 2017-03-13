@@ -256,6 +256,8 @@ def commonCommands():
         '#!/bin/bash\n',
         'ethtool -K eth0 sg off\n'  # Disable scatter / gather for eth0 (see http://bit.ly/1R25bbE)
         'cd /home/ec2-user/sync-gateway-ami\n',
+        # 'git checkout master\n',    # TEMP ONLY.  DON"T CHECK IN.  WOULD BE NEAT TO DO THIS BASED ON AN INSTANCE TAG
+        # 'git pull\n',
         'pwd\n',
         'source setup.sh\n',
     ]
@@ -268,9 +270,9 @@ def commonCommands():
 def userDataCouchbaseServer(admin_user_reference, admin_passwword_reference):
 
     commands = commonCommands() + [
+        'sleep 30\n',  # workaround for https://issues.couchbase.com/browse/MB-23081
         'export public_dns_name=$(curl http://169.254.169.254/latest/meta-data/public-hostname)\n',  # call ec2 instance data to get public hostname
         'python src/cbbootstrap.py --cluster-id ', Ref("AWS::StackId"), ' --node-ip-addr-or-hostname ${public_dns_name} --admin-user ',  admin_user_reference, ' --admin-pass ',  admin_passwword_reference, '\n',
-        # TODO: for sg-autoscale cloudformation, call install_telegraf()
     ]
     return Base64(Join('', commands))
 

@@ -175,7 +175,7 @@ def gen_template(config):
         instance.SecurityGroups = [Ref(secGrpCouchbase)]
         instance.KeyName = Ref(keyname_param)
         instance.IamInstanceProfile = Ref(instanceProfile)
-        instance.UserData = userDataSGAccel()
+        instance.UserData = cfncommon.userDataSGAccel()
         instance.Tags = Tags(Name=name, Type=server_type)
         instance.BlockDeviceMappings = [cfncommon.blockDeviceMapping(config, server_type)]
 

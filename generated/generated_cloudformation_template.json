@@ -91,8 +91,11 @@
                             [
                                 "#!/bin/bash\n",
                                 "ethtool -K eth0 sg off\ncd /home/ec2-user/sync-gateway-ami\n",
+                                "git checkout master\n",
+                                "git pull\n",
                                 "pwd\n",
                                 "source setup.sh\n",
+                                "sleep 30\n",
                                 "export public_dns_name=$(curl http://169.254.169.254/latest/meta-data/public-hostname)\n",
                                 "python src/cbbootstrap.py --cluster-id ",
                                 {
@@ -337,6 +340,8 @@
                             [
                                 "#!/bin/bash\n",
                                 "ethtool -K eth0 sg off\ncd /home/ec2-user/sync-gateway-ami\n",
+                                "git checkout master\n",
+                                "git pull\n",
                                 "pwd\n",
                                 "source setup.sh\n",
                                 "python src/sg_autoscale_launch.py --stack-name ",
@@ -470,6 +475,8 @@
                             [
                                 "#!/bin/bash\n",
                                 "ethtool -K eth0 sg off\ncd /home/ec2-user/sync-gateway-ami\n",
+                                "git checkout master\n",
+                                "git pull\n",
                                 "pwd\n",
                                 "source setup.sh\n",
                                 "python src/sg_autoscale_launch.py --stack-name ",
