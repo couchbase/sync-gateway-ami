@@ -114,7 +114,7 @@ class CouchbaseCluster:
 
         self.WaitUntilLocalCouchbaseServerRunning()
         
-        self.ClusterInit()
+        self.ClusterInitRetry()
 
         # This is to prevent node-init failures if we try to call
         # node-init "too soon".  Since node-init hasn't been called, the
@@ -125,7 +125,7 @@ class CouchbaseCluster:
         # Workaround attempt for https://issues.couchbase.com/browse/MB-23079
         time.sleep(2)
 
-        self.NodeInit()
+        self.NodeInitRetry()
         
     def ClusterInit(self):
 
@@ -200,21 +200,32 @@ class CouchbaseCluster:
 
         raise Exception("Gave up trying to run {}".format(method))
 
+    def ClusterInitRetry(self):
+        self.Retry(self.ClusterInit)
+
+    def NodeInitRetry(self):
+        self.Retry(self.NodeInit)
 
     def CreateRetry(self):
         self.Retry(self.Create)
         
     def JoinRetry(self):
         self.Retry(self.Join)
+
+    def RebalanceRetry(self):
+        self.Retry(self.Rebalance)
         
     def Join(self):
         
         self.WaitUntilLocalCouchbaseServerRunning()
         
         self.WaitUntilNodeHealthy(self.initial_node_ip_addr_or_hostname)  
-        self.ServerAdd()
+        self.ServerAddRetry()
         self.WaitForNoRebalanceRunning()
-        self.Rebalance()
+        self.RebalanceRetry()
+
+    def ServerAddRetry(self):
+        self.Retry(self.ServerAdd)
         
     def ServerAdd(self):
 
