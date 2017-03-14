@@ -46,7 +46,7 @@ $ service sync_gateway restart
 
 To launch a full mobile backend Cloudformation stack click the **Launch Stack** button below:
 
-[![Launch CouchbaseSyncGateway](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=CouchbaseSyncGateway&templateURL=http://cbmobile-cloudformation-templates.s3.amazonaws.com/SyncGateway1.4.0/generated_cloudformation_template.json)
+[![Launch CouchbaseSyncGateway](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=CouchbaseSyncGateway&templateURL=http://cbmobile-aws.s3.amazonaws.com/cloudformation-templates/SyncGateway1.4.0/generated_cloudformation_template.json)
 
 You will need to customize:
 

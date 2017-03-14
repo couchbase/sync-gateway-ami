@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import sg_launch
+
 import os
 import re
 import socket
+import urllib2
 import argparse
 import cbbootstrap
 from string import Template
 import sys
-
+import sg_launch
 
 """
 The purpose of this script is to relaunch sync gateway with the correct config
@@ -17,74 +18,24 @@ The purpose of this script is to relaunch sync gateway with the correct config
 
 """
 
-# If you are running Sync Gateway, customize your configuration here
-sync_gateway_config = """
-{
-    "log":[
-        "HTTP+"
-    ],
-    "adminInterface":"0.0.0.0:4985",
-    "interface":"0.0.0.0:4984",
-    "databases":{
-        "db":{
-            "server":"http://$couchbase_server_ip:8091",
-            "bucket":"data-bucket",
-            "channel_index":{
-                "server":"http://$couchbase_server_ip:8091",
-                "bucket":"index-bucket",
-                "writer":false
-            },
-            "users":{
-                "GUEST":{
-                    "disabled":false,
-                    "admin_channels":[
-                        "*"
-                    ]
-                }
-            }
-        }
-    }
-}
-"""
 
-# If you are running Sync Gateway Acceletor, customize your configuration here
-sg_accel_config = """
-{
-    "log":[
-        "HTTP+"
-    ],
-    "adminInterface":"0.0.0.0:4985",
-    "interface":"0.0.0.0:4984",
-    "databases":{
-        "default":{
-            "server":"http://$couchbase_server_ip:8091",
-            "bucket":"data-bucket",
-            "channel_index":{
-                "server":"http://$couchbase_server_ip:8091",
-                "bucket":"index-bucket",
-                "writer":true
-            }
-        }
-    },
-    "cluster_config":{
-        "server":"http://$couchbase_server_ip:8091",
-        "bucket":"data-bucket",
-        "data_dir":"."
-    }
-}
-"""
-
-
-def relaunch_sg_with_custom_config(stack_name, server_type):
+def relaunch_sg_with_custom_config(stack_name, server_type, config_url):
 
     # Use cbbootrap to call REST API to discover the IP address of the initial couchbase server node
     couchbase_server_ip = cbbootstrap.discover_initial_couchbase_server_ip(stack_name)
 
-    template = Template(sync_gateway_config)
-    sync_gateway_config_rendered = template.substitute(couchbase_server_ip=couchbase_server_ip)
+    response = urllib2.urlopen(config_url)
+    config_content = response.read()
+    template = Template(config_content)
+    sync_gateway_config_rendered = "Error"
+    sg_accel_config_rendered = "Error"
 
-    template = Template(sg_accel_config)
-    sg_accel_config_rendered = template.substitute(couchbase_server_ip=couchbase_server_ip)
+    if server_type == sg_launch.SERVER_TYPE_SYNC_GATEWAY:
+        sync_gateway_config_rendered = template.substitute(couchbase_server_ip=couchbase_server_ip)
+    elif server_type == sg_launch.SERVER_TYPE_SG_ACCEL:
+        sg_accel_config_rendered = template.substitute(couchbase_server_ip=couchbase_server_ip)
+    else:
+        raise Exception("Unrecognized server type: {}".format(server_type))
 
     sg_launch.main(
         sync_gateway_config_rendered,
@@ -107,11 +58,21 @@ if __name__ == "__main__":
         help="The server type: sg or sg-accel",
         required=True,
     )
+    parser.add_argument(
+        "--config-url",
+        help="The URL of the Sync Gateway or SG Accel configuration template.  It's expected to have $couchbase_server_ip placeholders which will be replaced by Couchbase Server IP addresses",
+        required=True,
+    )
+
     args = parser.parse_args()
 
-    print("{} called with stack name: {}  server type: {}".format(sys.argv[0], args.stack_name, args.server_type))
+    print("{} called with stack name: {}  server type: {} config url: {}".format(sys.argv[0], args.stack_name, args.server_type, args.config_url))
 
-    relaunch_sg_with_custom_config(args.stack_name.strip(), args.server_type.strip())
+    relaunch_sg_with_custom_config(
+        stack_name=args.stack_name.strip(),
+        server_type=args.server_type.strip(),
+        config_url=args.config_url.strip(),
+    )
 
 
 

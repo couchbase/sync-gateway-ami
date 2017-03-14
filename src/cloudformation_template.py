@@ -46,6 +46,18 @@ def gen_template(config):
         Description='The InstanceType to use for Sync Gateway Accel instance',
         Default='m3.medium',
     ))
+    sync_gateway_config_url_param = t.add_parameter(Parameter(
+        'SyncGatewayConfigUrl',
+        Type='String',
+        Description='URL which contains Sync Gateway configuration template',
+        Default='http://cbmobile-aws.s3.amazonaws.com/cloudformation-sync-gateway-config/SyncGateway1.4.0/sync_gateway.json.template',
+    ))
+    sg_accel_config_url_param = t.add_parameter(Parameter(
+        'SgAccelConfigUrl',
+        Type='String',
+        Description='URL which contains Sync Gateway Accelerator configuration template',
+        Default='http://cbmobile-aws.s3.amazonaws.com/cloudformation-sync-gateway-config/SyncGateway1.4.0/sg_accel.json.template',
+    ))
     couchbase_server_admin_user_param = t.add_parameter(Parameter(
         'CouchbaseServerAdminUserParam',
         Type='String',
@@ -101,7 +113,7 @@ def gen_template(config):
         KeyName=Ref(keyname_param),
         InstanceType=Ref(sync_gateway_instance_type_param),
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=cfncommon.userDataSyncGateway(),
+        UserData=cfncommon.userDataSyncGateway(Ref(sync_gateway_config_url_param)),
         BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "syncgateway")]
     )
     t.add_resource(SGLaunchConfiguration)
@@ -122,7 +134,7 @@ def gen_template(config):
         KeyName=Ref(keyname_param),
         InstanceType=Ref(sg_accel_instance_type_param),
         SecurityGroups=[Ref(secGrpCouchbase)],
-        UserData=cfncommon.userDataSGAccel(),
+        UserData=cfncommon.userDataSGAccel(Ref(sg_accel_config_url_param)),
         BlockDeviceMappings=[cfncommon.blockDeviceMapping(config, "sgaccel")]
     )
     t.add_resource(SGAccelLaunchConfiguration)
@@ -159,13 +171,13 @@ def main():
 
     # Generated via http://uberjenkins.sc.couchbase.com/view/Build/job/couchbase-server-ami/
     couchbase_ami_ids_per_region = {
-        "us-east-1": "ami-10a80506",
+        "us-east-1": "ami-d52887c3",
         "us-west-1": "ami-d45c05b4"
     }
 
     # Generated via http://uberjenkins.sc.couchbase.com/view/Build/job/sync-gateway-ami/
     sync_gateway_ami_ids_per_region = {
-        "us-east-1": "ami-f1d77ae7",
+        "us-east-1": "ami-682b847e",
         "us-west-1": "ami-4cf0ae2c"
     }
 
