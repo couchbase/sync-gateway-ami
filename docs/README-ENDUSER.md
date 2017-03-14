@@ -71,6 +71,19 @@ All resources are in AutoScalingGroups and it is simple to scale capacity up or 
 
 * In the AWS / EC2 Web Admin UI, find the AutoScalingGroup of the resource you want to increase capacity for (Couchbase Server, Sync Gateway, etc) and changed the number of **Desired** instances.
 
+### Customize configuration
+
+1. Download these two files:
+
+    * [sync_gateway.json.template](http://cbmobile-aws.s3.amazonaws.com/cloudformation-sync-gateway-config/SyncGateway1.4.0/sync_gateway.json.template)
+    * [sg_accel.json.template](http://cbmobile-aws.s3.amazonaws.com/cloudformation-sync-gateway-config/SyncGateway1.4.0/sg_accel.json.template)
+
+1. Customize the configuration templates to your liking
+1. Upload them to publicly accessible URL's
+1. Launch a new Cloudformation Stack, and replace the configuration URL's to point to your customized configuration files
+
+**Caveat** If you need to add more buckets, or want to rename the buckets, you will need to do that by hand.  Please file an issue if you run into this limitation.
+
 ### Connect to Couchbase Web Admin
 
 By default, the Couchbase Web Admin port 8091 is not accessible.

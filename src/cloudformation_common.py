@@ -84,7 +84,7 @@ def CBServerAutoScalingGroup(LaunchConfigurationName):
         ],
         MaxSize=100,
         MinSize=0,
-        DesiredCapacity=3,
+        DesiredCapacity=1,
     )
 
 

@@ -49,7 +49,7 @@
                 "AvailabilityZones": {
                     "Fn::GetAZs": ""
                 },
-                "DesiredCapacity": 3,
+                "DesiredCapacity": 1,
                 "LaunchConfigurationName": {
                     "Ref": "CBServerLaunchConfiguration"
                 },
@@ -82,7 +82,7 @@
                         }
                     }
                 ],
-                "ImageId": "ami-d52887c3",
+                "ImageId": "ami-2eeb4538",
                 "InstanceType": {
                     "Ref": "CouchbaseServerInstanceType"
                 },
@@ -329,7 +329,7 @@
                         }
                     }
                 ],
-                "ImageId": "ami-abae03bd",
+                "ImageId": "ami-dc69c7ca",
                 "InstanceType": {
                     "Ref": "SgAccelInstanceType"
                 },
@@ -466,7 +466,7 @@
                         }
                     }
                 ],
-                "ImageId": "ami-682b847e",
+                "ImageId": "ami-b76bc5a1",
                 "InstanceType": {
                     "Ref": "SyncGatewayInstanceType"
                 },
