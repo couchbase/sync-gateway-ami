@@ -53,12 +53,23 @@ You will need to customize:
 1. The Couchbase Server Admin password -- please use something that is hard to guess
 1. The SSH key name which allows you to SSH into any of the instances.  If you don't already have one registered in EC2, you will need to add one.
 
-This will create the following EC2 instances:
+This will create the following AutoScalingGroups:
 
 - Couchbase Server Enterprise Edition 4.5.0
 - Sync Gateway 1.4 Enterprise Edition
 - Sync Gateway Accel 1.4 Enterprise Edition
 
+### Verify
+
+* In the AWS Management Console web UI, go to the **EC2** section and look for the Elastic Load Balancer instance
+* Click the Load Balancer and look for the **DNS Name** field, it should be something like `SGAS-YOUR_STACK_NAME_Stack-576263650.us-east-1.elb.amazonaws.com`
+* In your browser, go to port 4984 **http://SGAS-YOUR_STACK_NAME_Stack-576263650.us-east-1.elb.amazonaws.com:4984** and it should return JSON content like `{couchdb: "Welcome", ..etc ..`
+
+### Increase Capacity
+
+All resources are in AutoScalingGroups and it is simple to scale capacity up or down.
+
+* In the AWS / EC2 Web Admin UI, find the AutoScalingGroup of the resource you want to increase capacity for (Couchbase Server, Sync Gateway, etc) and changed the number of **Desired** instances.
 
 ### Connect to Couchbase Web Admin
 
@@ -66,7 +77,9 @@ By default, the Couchbase Web Admin port 8091 is not accessible.
 
 **Allow restricted access to port 8091**
 
-1. In the AWS EC2 Web Console instance list, click the `couchbaseserver` instance
+1. In the AWS EC2 Web Console **Auto Scaling Groups** section, look for an Auto Scaling Group with "CBServerAutoScalingGroup" somewhere in the name
+1. Click the **Instances** tab, and you should see three instances listed
+1. Click any one of the **Instance IDs** listed, and it will take you to the details for that instance.
 1. Under **Security Groups**, click the security group
 1. Choose the **Inbound** tab
 1. Click the **Edit** button
