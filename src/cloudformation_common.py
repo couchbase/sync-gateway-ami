@@ -239,7 +239,7 @@ def userDataSyncGateway(sync_gateway_config_url_reference):
     """
 
     commands = commonCommands() + [
-        'python src/sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), ' --config-url', sync_gateway_config_url_reference, ' --server-type ' + sg_launch.SERVER_TYPE_SYNC_GATEWAY + '\n',
+        'python src/sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), ' --config-url ', sync_gateway_config_url_reference, ' --server-type ' + sg_launch.SERVER_TYPE_SYNC_GATEWAY + '\n',
     ]
     return Base64(Join('', commands))
 
@@ -247,7 +247,7 @@ def userDataSyncGateway(sync_gateway_config_url_reference):
 def userDataSGAccel(sg_accel_config_url_reference):
 
     commands = commonCommands() + [
-        'python src/sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), ' --config-url', sg_accel_config_url_reference, ' --server-type ' + sg_launch.SERVER_TYPE_SG_ACCEL + '\n',
+        'python src/sg_autoscale_launch.py --stack-name ', Ref("AWS::StackId"), ' --config-url ', sg_accel_config_url_reference, ' --server-type ' + sg_launch.SERVER_TYPE_SG_ACCEL + '\n',
     ]
     return Base64(Join('', commands))
 
@@ -281,8 +281,8 @@ def commonCommands():
         '#!/bin/bash\n',
         'ethtool -K eth0 sg off\n'  # Disable scatter / gather for eth0 (see http://bit.ly/1R25bbE)
         'cd /home/ec2-user/sync-gateway-ami\n',
-        'git checkout master\n',    # TEMP ONLY.  DON"T CHECK IN.  WOULD BE NEAT TO DO THIS BASED ON AN INSTANCE TAG
-        'git pull\n',
+         # 'git checkout master\n',    # TEMP ONLY.  DON"T CHECK IN.  WOULD BE NEAT TO DO THIS BASED ON AN INSTANCE TAG
+         # 'git pull\n',
         'pwd\n',
         'source setup.sh\n',
     ]
