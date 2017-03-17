@@ -3,16 +3,26 @@ Running the Couchbase Mobile Sync Gateway / Sync Gateway Accelerator AMI
 
 ## AMI Overview
 
-The following AMI's are available on the AWS Marketplace:
+Choose which AMI to launch:
 
-1. Sync Gateway 1.4 Community Edition
 1. Sync Gateway 1.4 Enterprise Edition
+1. Sync Gateway 1.4 Community Edition
 1. Sync Gateway Accelerator 1.4 Enterprise Edition
 
 ## Launch Sync Gateway EC2 Instance with an in-memory backing store
 
-* Choose Sync Gateway 1.4 Community or Enterprise Edition AMI with the appropriate region
+* Follow this link: [Sync Gateway 1.4 Enterprise Edition](https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LaunchInstanceWizard:ami=ami-b76bc5a1)  (NOTE: this will be a button in the AWS marketplace after it's submitted)
+* Choose the appropriate size (recommended: m3.medium)
+* Configure instance details ![screenshot instance details](screenshot_configure_instance_details.png)
+* Increase storage size if needed
+* Tags: it's recommended to add a tag with a key of "Name" a value of "Sync Gateway", for your own tracking purposes
 * Edit your Security Group to expose port 4984 to Anywhere
+   * Add rule
+   * Type: leave as custom tcp rule
+   * Under port range enter 4984
+   * Under Source choose Click: Custom pulldown and choose Anywhere
+   ![screenshot_edit_security_group](screenshot_edit_security_group.png)
+
 * Launch instance
 
 ### Verify
@@ -53,15 +63,19 @@ You will need to customize:
 1. The Couchbase Server Admin password -- please use something that is hard to guess
 1. The SSH key name which allows you to SSH into any of the instances.  If you don't already have one registered in EC2, you will need to add one.
 
+![screenshot_launch_cloudformation](screenshot_launch_cloudformation.png)
+
 This will create the following AutoScalingGroups:
 
 - Couchbase Server Enterprise Edition 4.5.0
 - Sync Gateway 1.4 Enterprise Edition
 - Sync Gateway Accel 1.4 Enterprise Edition
 
+**Caveat:** currently this depends on an external REST API to bootstrap the discovery of the Couchbase Server.  [tracking ticket](https://github.com/couchbase/sync_gateway/issues/2386)
+
 ### Verify
 
-* In the AWS Management Console web UI, go to the **EC2** section and look for the Elastic Load Balancer instance
+* In the AWS Management Console web UI, go to the **EC2** section and look for the **Load Balancing / Load Balancer** section on the left hand navigation
 * Click the Load Balancer and look for the **DNS Name** field, it should be something like `SGAS-YOUR_STACK_NAME_Stack-576263650.us-east-1.elb.amazonaws.com`
 * In your browser, go to port 4984 **http://SGAS-YOUR_STACK_NAME_Stack-576263650.us-east-1.elb.amazonaws.com:4984** and it should return JSON content like `{couchdb: "Welcome", ..etc ..`
 
@@ -90,8 +104,8 @@ By default, the Couchbase Web Admin port 8091 is not accessible.
 
 **Allow restricted access to port 8091**
 
-1. In the AWS EC2 Web Console **Auto Scaling Groups** section, look for an Auto Scaling Group with "CBServerAutoScalingGroup" somewhere in the name
-1. Click the **Instances** tab, and you should see three instances listed
+1. In the AWS EC2 Web Console **Auto Scaling Groups** section, look for an Auto Scaling Group with "<cloudformation-name>-CBServerAutoScalingGroup" somewhere in the name
+1. Click the **Instances** tab, and you should see one instance listed
 1. Click any one of the **Instance IDs** listed, and it will take you to the details for that instance.
 1. Under **Security Groups**, click the security group
 1. Choose the **Inbound** tab
@@ -100,7 +114,7 @@ By default, the Couchbase Web Admin port 8091 is not accessible.
        * **Type** Custom TCP Rule
        * **Protocol** TCP
        * **Port Range** 8091
-       * **Source** Find your external IP address (you may need to ask your network administrator), and if your IP is `173.228.112.82` use `173.228.112.82/32`
+       * **Source** Choose **Custom** pulldown and choose My IP
 
 **Login to Couchbase Server**
 
