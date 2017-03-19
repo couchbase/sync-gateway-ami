@@ -39,15 +39,8 @@ def SGAutoScaleLoadBalancer(AvailabilityZoneReference):
                 Protocol="HTTP",
                 InstanceProtocol="HTTP",
             ),
-            elb.Listener(
-                LoadBalancerPort="4985",
-                InstancePort="4985",
-                Protocol="HTTP",
-                InstanceProtocol="HTTP",
-            ),
         ],
         CrossZone=True,
-        SecurityGroups=[GetAtt("CouchbaseSecurityGroup", "GroupId")],
         LoadBalancerName=Join('', ["SGAS-", Ref("AWS::StackName")]),
         Scheme="internet-facing",
     )

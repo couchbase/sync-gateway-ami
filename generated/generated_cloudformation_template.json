@@ -422,15 +422,7 @@
                         ]
                     ]
                 },
-                "Scheme": "internet-facing",
-                "SecurityGroups": [
-                    {
-                        "Fn::GetAtt": [
-                            "CouchbaseSecurityGroup",
-                            "GroupId"
-                        ]
-                    }
-                ]
+                "Scheme": "internet-facing"
             },
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer"
         },
