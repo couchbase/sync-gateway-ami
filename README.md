@@ -35,8 +35,7 @@ $ aws cloudformation create-stack --stack-name YOUR_STACK_NAME \
   --template-body file://generated/generated_cloudformation_template.json
   --region us-east-1
   --parameters ParameterKey=KeyName,ParameterValue=YOUR_KEY_NAME \
-               ParameterKey=CouchbaseServerAdminPassParam,ParameterValue=YOUR_PASSWORD \
-               ParameterKey=CouchbaseServerInstanceType,ParameterValue=m3.medium
+               ParameterKey=CouchbaseServerAdminPassword,ParameterValue=YOUR_PASSWORD
 
 ```
 

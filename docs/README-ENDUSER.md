@@ -63,6 +63,10 @@ You will need to customize:
 1. The Couchbase Server Admin password -- please use something that is hard to guess
 1. The SSH key name which allows you to SSH into any of the instances.  If you don't already have one registered in EC2, you will need to add one.
 
+You might also need to customize:
+
+1. The AvailabilityZone -- for example if you are launching this in us-west-1, you will want to change this to something like us-west-1a.  If you are running in us-east-1 you can most likely leave this as the default value.  See this [Stack Overflow](http://stackoverflow.com/questions/41903166/create-failed-elasticloadbalancerthe-requested-availability-zone-us-east-1c-is) post for more information on why this parameter is necessary.
+
 ![screenshot_launch_cloudformation](screenshot_launch_cloudformation.png)
 
 This will create the following AutoScalingGroups:

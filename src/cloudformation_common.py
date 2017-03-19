@@ -4,7 +4,6 @@ import collections
 from troposphere import Ref, Template, Parameter, Tags, Join, GetAtt, Output
 import troposphere.autoscaling as autoscaling
 from troposphere.elasticloadbalancing import LoadBalancer
-from troposphere import GetAZs
 import troposphere.ec2 as ec2
 import troposphere.elasticloadbalancing as elb
 from troposphere import iam
@@ -15,7 +14,7 @@ import sg_launch
 
 # Elastic Load Balancer (ELB)
 # ------------------------------------------------------------------------------------------------------------------
-def SGAutoScaleLoadBalancer():
+def SGAutoScaleLoadBalancer(AvailabilityZoneReference):
     return LoadBalancer(
         "SGAutoScaleLoadBalancer",
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
@@ -25,7 +24,7 @@ def SGAutoScaleLoadBalancer():
         ConnectionSettings=elb.ConnectionSettings(
             IdleTimeout=3600,  # 1 hour to help avoid 504 GATEWAY_TIMEOUT for continuous changes feeds
         ),
-        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        AvailabilityZones=[AvailabilityZoneReference],  # Get the AZ passed in by the user
         HealthCheck=elb.HealthCheck(
             Target="HTTP:4984/",
             HealthyThreshold="2",
@@ -55,10 +54,10 @@ def SGAutoScaleLoadBalancer():
 
 # SG AutoScaleGroup
 # ------------------------------------------------------------------------------------------------------------------
-def SGAutoScalingGroup(LaunchConfigurationName, LoadBalancerNames):
+def SGAutoScalingGroup(LaunchConfigurationName, LoadBalancerNames, AvailabilityZoneReference):
     return autoscaling.AutoScalingGroup(
         "SGAutoScalingGroup",
-        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        AvailabilityZones=[AvailabilityZoneReference],
         LaunchConfigurationName=LaunchConfigurationName,
         LoadBalancerNames=LoadBalancerNames,
         Tags=[
@@ -73,10 +72,10 @@ def SGAutoScalingGroup(LaunchConfigurationName, LoadBalancerNames):
 
 # CBServer AutoScalingGroup
 # ------------------------------------------------------------------------------------------------------------------
-def CBServerAutoScalingGroup(LaunchConfigurationName):
+def CBServerAutoScalingGroup(LaunchConfigurationName, AvailabilityZoneReference):
     return autoscaling.AutoScalingGroup(
         "CBServerAutoScalingGroup",
-        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        AvailabilityZones=[AvailabilityZoneReference],
         LaunchConfigurationName=LaunchConfigurationName,
         Tags=[
             autoscaling.Tag(key="Type", value="couchbaseserver", propogate=True),
@@ -89,10 +88,10 @@ def CBServerAutoScalingGroup(LaunchConfigurationName):
 
 
 
-def SGAccelAutoScalingGroup(LaunchConfigurationName):
+def SGAccelAutoScalingGroup(LaunchConfigurationName, AvailabilityZoneReference):
     return autoscaling.AutoScalingGroup(
         "SGAccelAutoScalingGroup",
-        AvailabilityZones=GetAZs(""),  # Get all AZ's in current region (I think)
+        AvailabilityZones=[AvailabilityZoneReference],
         LaunchConfigurationName=LaunchConfigurationName,
         Tags=[
             autoscaling.Tag(key="Type", value="sgaccel", propogate=True),

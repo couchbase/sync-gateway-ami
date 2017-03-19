@@ -1,13 +1,18 @@
 {
     "Description": "Sync Gateway + Sync Gateway Accelerator + Couchbase Server",
     "Parameters": {
-        "CouchbaseServerAdminPassParam": {
+        "AvailabilityZone": {
+            "Default": "us-east-1a",
+            "Description": "The availability zone param.  Workaround for http://stackoverflow.com/questions/41903166/create-failed-elasticloadbalancerthe-requested-availability-zone-us-east-1c-is",
+            "Type": "AWS::EC2::AvailabilityZone::Name"
+        },
+        "CouchbaseServerAdminPassword": {
             "Description": "The Couchbase Server Admin password",
             "MinLength": 8,
             "NoEcho": true,
             "Type": "String"
         },
-        "CouchbaseServerAdminUserParam": {
+        "CouchbaseServerAdminUser": {
             "Default": "Administrator",
             "Description": "The Couchbase Server Admin username",
             "Type": "String"
@@ -46,9 +51,11 @@
     "Resources": {
         "CBServerAutoScalingGroup": {
             "Properties": {
-                "AvailabilityZones": {
-                    "Fn::GetAZs": ""
-                },
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
                 "DesiredCapacity": 1,
                 "LaunchConfigurationName": {
                     "Ref": "CBServerLaunchConfiguration"
@@ -111,11 +118,11 @@
                                 },
                                 " --node-ip-addr-or-hostname ${public_dns_name} --admin-user ",
                                 {
-                                    "Ref": "CouchbaseServerAdminUserParam"
+                                    "Ref": "CouchbaseServerAdminUser"
                                 },
                                 " --admin-pass ",
                                 {
-                                    "Ref": "CouchbaseServerAdminPassParam"
+                                    "Ref": "CouchbaseServerAdminPassword"
                                 },
                                 "\n"
                             ]
@@ -293,9 +300,11 @@
         },
         "SGAccelAutoScalingGroup": {
             "Properties": {
-                "AvailabilityZones": {
-                    "Fn::GetAZs": ""
-                },
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
                 "DesiredCapacity": 1,
                 "LaunchConfigurationName": {
                     "Ref": "SGAccelLaunchConfiguration"
@@ -368,9 +377,11 @@
         },
         "SGAutoScaleLoadBalancer": {
             "Properties": {
-                "AvailabilityZones": {
-                    "Fn::GetAZs": ""
-                },
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
                 "ConnectionDrainingPolicy": {
                     "Enabled": true,
                     "Timeout": 120
@@ -425,9 +436,11 @@
         },
         "SGAutoScalingGroup": {
             "Properties": {
-                "AvailabilityZones": {
-                    "Fn::GetAZs": ""
-                },
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
                 "DesiredCapacity": 1,
                 "LaunchConfigurationName": {
                     "Ref": "SGLaunchConfiguration"

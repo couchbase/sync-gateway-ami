@@ -4,12 +4,6 @@
 import collections
 from troposphere import Ref, Template, Parameter, Tags, Base64, Join, GetAtt, Output
 import troposphere.autoscaling as autoscaling
-from troposphere.elasticloadbalancing import LoadBalancer
-from troposphere import GetAZs
-import troposphere.ec2 as ec2
-import troposphere.elasticloadbalancing as elb
-from troposphere import iam
-from troposphere.route53 import RecordSetType
 import cloudformation_common as cfncommon
 
 def gen_template(config):
@@ -59,26 +53,37 @@ def gen_template(config):
         Default='http://cbmobile-aws.s3.amazonaws.com/cloudformation-sync-gateway-config/SyncGateway1.4.0/sg_accel.json.template',
     ))
     couchbase_server_admin_user_param = t.add_parameter(Parameter(
-        'CouchbaseServerAdminUserParam',
+        'CouchbaseServerAdminUser',
         Type='String',
         Description='The Couchbase Server Admin username',
         Default='Administrator',
     ))
     couchbase_server_admin_pass_param = t.add_parameter(Parameter(
-        'CouchbaseServerAdminPassParam',
+        'CouchbaseServerAdminPassword',
         Type='String',
         Description='The Couchbase Server Admin password',
         MinLength=8,
         NoEcho=True,
     ))
-    
+
+    # The user must pass in the AvailabilityZone to use, see: http://stackoverflow.com/questions/41903166/create-failed-elasticloadbalancerthe-requested-availability-zone-us-east-1c-is
+    # Without this, was getting the following errors in *some* AWS accounts: https://gist.github.com/tleyden/b18f9b4d8be094954c9bb009b1b4e5ca
+    availability_zone_parameter = t.add_parameter(Parameter(
+        'AvailabilityZone',
+        Type='AWS::EC2::AvailabilityZone::Name',
+        Description='The availability zone param.  Workaround for http://stackoverflow.com/questions/41903166/create-failed-elasticloadbalancerthe-requested-availability-zone-us-east-1c-is',
+        Default='us-east-1a',
+    ))
+
     # Security Group
     # ------------------------------------------------------------------------------------------------------------------
     secGrpCouchbase = cfncommon.SecGrpCouchbase(t)
 
     # Load Balancer
     # ------------------------------------------------------------------------------------------------------------------
-    SGAutoScaleLoadBalancer = cfncommon.SGAutoScaleLoadBalancer()
+    SGAutoScaleLoadBalancer = cfncommon.SGAutoScaleLoadBalancer(
+        AvailabilityZoneReference=Ref(availability_zone_parameter),
+    )
     t.add_resource(SGAutoScaleLoadBalancer)
 
     # Couchbase Server LaunchConfiguration (AutoScaleGroup)
@@ -101,6 +106,7 @@ def gen_template(config):
     # ------------------------------------------------------------------------------------------------------------------
     CBServerAutoScalingGroup = cfncommon.CBServerAutoScalingGroup(
         LaunchConfigurationName=Ref(CBServerLaunchConfiguration),
+        AvailabilityZoneReference=Ref(availability_zone_parameter),
     )
     t.add_resource(CBServerAutoScalingGroup)
 
@@ -123,6 +129,7 @@ def gen_template(config):
     SGAutoScalingGroup = cfncommon.SGAutoScalingGroup(
         LaunchConfigurationName=Ref(SGLaunchConfiguration),
         LoadBalancerNames=[Ref(SGAutoScaleLoadBalancer)],
+        AvailabilityZoneReference=Ref(availability_zone_parameter),
     )
     t.add_resource(SGAutoScalingGroup)
 
@@ -143,6 +150,7 @@ def gen_template(config):
     # ------------------------------------------------------------------------------------------------------------------
     SGAccelAutoScalingGroup = cfncommon.SGAccelAutoScalingGroup(
         LaunchConfigurationName=Ref(SGAccelLaunchConfiguration),
+        AvailabilityZoneReference=Ref(availability_zone_parameter),
     )
     t.add_resource(SGAccelAutoScalingGroup)
 
