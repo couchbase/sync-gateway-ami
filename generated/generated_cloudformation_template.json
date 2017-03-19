@@ -403,12 +403,6 @@
                         "InstanceProtocol": "HTTP",
                         "LoadBalancerPort": "4984",
                         "Protocol": "HTTP"
-                    },
-                    {
-                        "InstancePort": "4985",
-                        "InstanceProtocol": "HTTP",
-                        "LoadBalancerPort": "4985",
-                        "Protocol": "HTTP"
                     }
                 ],
                 "LoadBalancerName": {
