@@ -52,5 +52,7 @@ http://cbmobile-cloudformation-templates.s3.amazonaws.com/SyncGateway1.4.0/gener
 * [sync-gateway-ami](http://uberjenkins.sc.couchbase.com/view/Build/job/sync-gateway-ami/) 
 * [sg-accel-ami](http://uberjenkins.sc.couchbase.com/view/Build/job/sg-accel-ami/)
 
+## Related work
 
+* [couchbase-ami](https://github.com/couchbaselabs/couchbase-ami) 
 
