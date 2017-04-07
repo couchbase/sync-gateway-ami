@@ -15,7 +15,7 @@
             },
             "users":{
                 "GUEST":{
-                    "disabled":false,
+                    "disabled":true,
                     "admin_channels":[
                         "*"
                     ]
