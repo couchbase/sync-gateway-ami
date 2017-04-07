@@ -1,0 +1,26 @@
+{
+    "log":[
+        "HTTP+"
+    ],
+    "adminInterface":"127.0.0.1:4985",
+    "interface":"0.0.0.0:4984",
+    "databases":{
+        "db":{
+            "server":"http://$couchbase_server_ip:8091",
+            "bucket":"data-bucket",
+            "channel_index":{
+                "server":"http://$couchbase_server_ip:8091",
+                "bucket":"index-bucket",
+                "writer":false
+            },
+            "users":{
+                "GUEST":{
+                    "disabled":false,
+                    "admin_channels":[
+                        "*"
+                    ]
+                }
+            }
+        }
+    }
+}
